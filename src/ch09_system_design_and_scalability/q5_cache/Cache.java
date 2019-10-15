@@ -1,54 +1,85 @@
 package ch09_system_design_and_scalability.q5_cache;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 public class Cache {
-	public static int MAX_SIZE = 10;
-	public Node head, tail;
-	public HashMap<String, Node> map;
-	public int size = 0;
-	
-	public Cache() {
-		map = new HashMap<>();
-	}
-	
-	/*Moves node to front of linked list*/
-	public void moveToFront(Node node) {
+	private Map<String, Node> cacheMap;
+	private Node head, tail;
+	private int cacheSize;
+	private int maxCacheSize;
 
+	public Cache(int size) {
+		cacheMap = new HashMap<String, Node>();
+		maxCacheSize = size;
 	}
-	
-	/*Removes node from linked list*/
-	public void removeFromLinkedList(Node node) {
 
-	}
-	
-	/*Gets results from linked list and updates linked list*/
-	public String[] getResults(String query) {
-		if(!map.containsKey(query))
-			return null;
-		
-		Node node  = map.get(query);
-		moveToFront(node);	//update freshness
-		return node.results;
-	}
-	
-	/*Insert results into linked list and hash*/
-	public void insertResults(String query, String[] results) {
-		if(map.containsKey(query)) {	//update values
-			Node node = map.get(query);
-			node.results = results;
-			moveToFront(node);	//update freshness
-			return;
+	public String[] search(String query) {
+		Node resultNode = cacheMap.get(query);
+
+		if (resultNode != null) {
+			System.out.println("Retrieving from cache... " + query);
+			moveNodeToHead(resultNode);
+		} else {
+			System.out.println("Retrieving from DB... " + query);
+			resultNode = processSearch(query);
+			putToHead(resultNode);
+			purgeLast();
+			cacheMap.put(query, resultNode);
+			cacheSize++;
 		}
-		
-		Node node = new Node(query, results);
-		moveToFront(node);
-		map.put(query, node);
-		
-		if(size > MAX_SIZE) {
-			map.remove(tail.query);
-			removeFromLinkedList(tail);
-		}
-		
+
+		return resultNode.results;
 	}
- }
+
+	private void putToHead(Node node) {
+		if (head == null) {
+			head = node;
+			tail = node;
+		} else {
+			node.next = head;
+			head.prev = node;
+			head = node;
+		}
+	}
+
+	private void purgeLast() {
+		if (cacheSize > maxCacheSize) {
+			System.out.println("Purging " + tail.query + " ....");
+			
+			cacheMap.remove(tail.query);
+			
+			tail.prev.next = null;
+			tail = tail.prev;
+		}
+	}
+
+	private void moveNodeToHead(Node node) {
+		if (node.prev != null) {
+			node.prev.next = node.next;
+			
+			if(node.next != null)
+				node.next.prev = node.prev;
+			else { // node was tail
+				tail = tail.prev;
+			}
+			
+			node.next = head;
+			head.prev = node;
+			head = node;
+			head.prev = null;
+		}
+	}
+
+	private Node processSearch(String query) {
+		return new Node(query, createRandomStringArr());
+	}
+
+	private String[] createRandomStringArr() {
+		String[] arr = new String[new Random().nextInt(10) + 1];
+		IntStream.range(0, arr.length).forEach(i -> arr[i] = java.lang.String.valueOf((new Random().nextInt(100))));
+		return arr;
+	}
+}
