@@ -29,7 +29,7 @@ public class MissingIntSolution {
 			/*
 			 * Finds the corresponding number in the bitfield by using the OR operator to
 			 * set the nth bit of a byte (e.g., 10 would correspond to the 2nd bit of index
-			 * 2 int he byte array).
+			 * 2 in the byte array).
 			 */
 
 			bitField[n / 8] |= 1 << (n % 8);
